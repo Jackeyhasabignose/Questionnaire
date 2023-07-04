@@ -22,6 +22,16 @@ const router = createRouter({
       name: 'backhome',
       component: () => import("../../views/Backview.vue")
     },
+    {
+      path: '/addquestionnaire',
+      name: 'addquestionnaire',
+      component: () => import("../../views/Addquestionnaireview.vue")
+    },
+    {
+      path: '/addquestion',
+      name: 'addquestion',
+      component: () => import("../../views/Addquestionview.vue")
+    },
   ]
 })
 

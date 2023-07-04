@@ -1,5 +1,53 @@
+<template>
+  <div class="position-relative w-95%">
+    <table class="table mb-5 table-striped table-hover">
+      <thead>
+        <tr class="table-dark">
+          <th></th>
+          <th v-for="column in columns" :key="column.key">{{ column.column }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="item in paginatedData" :key="item.id">
+          <td>
+            <input type="radio" :checked="selectedItemId === item.questionnaireId" :value="item.questionnaireId" @click="handleRadioClick(item)">
+          </td>
+          <td v-for="(column, index) in columns" :key="column.key">
+            <template v-if="column.key === 'options' && column.hasButton">
+              <div v-for="(option, optionIndex) in item[column.key]" :key="option">
+                {{ option }}
+              </div>
+              <button v-if="index === columns.length - 1" type="button" class="btn btn-sm btn-secondary" @click="openOptionsDialog(item)">
+                變更
+              </button>
+            </template>
+            <template v-else>
+              {{ item[column.key] }}
+            </template>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!-- 分頁按鈕等... -->
+  </div>
+  
+  
+  <Modal v-if="isOptionsDialogOpen" @pushOutside="closeOptionsDialog">
+  <h2>填寫選項</h2>
+  <form>
+    <input v-model="optionInput" type="text" placeholder="輸入選項">
+    <button type="button" @click="saveOptions">儲存</button>
+  </form>
+</Modal>
+
+</template>
+
 <script>
+import Modal from './Modal.vue';
 export default {
+  components: {      
+     Modal
+    },
   props: {
     columns: {
       type: Array,
@@ -32,13 +80,19 @@ export default {
     showChooseButton: {
       type: Boolean,
       default: false
+    },
+    selectedItemId: {
+      type: Number,
+      default: null
     }
   },
   data() {
     return {
       currentPage: 1,
       displayedPages: [],
-      
+      isOptionsDialogOpen: false,
+      optionInput: '',
+      selectedQuestion: null
     };
   },
   computed: {
@@ -90,48 +144,57 @@ export default {
       this.$emit('complete', item);
     },
     chooseItem(item) {
-      this.selectedItemId = item.questionnaireId; // 設置選中的項目的 ID
       this.$emit('choose', item);
     },
     handleRadioClick(item) {
-      this.selectedItemId = item.questionnaireId; // 設置選中的項目的 ID
-      console.log(item)
+      this.$emit('update:selectedItemId', item.questionnaireId);
+    },
+    openOptionsDialog(item) {
+      this.$emit('openOptionsDialog', item);
+      this.selectedQuestion = item;
+      this.isOptionsDialogOpen = true;
+    },
+    closeOptionsDialog() {
+      this.isOptionsDialogOpen = false;
+    },
+    saveOptions() {
+      if (this.selectedQuestion) {
+        this.selectedQuestion.options.push(this.optionInput);
+      }
+      this.isOptionsDialogOpen = false;
+      this.optionInput = '';
     }
   }
 };
-
 </script>
-
-<template>
-    <div class="position-relative w-95%">
-      <table class="table mb-5 table-striped table-hover">
-        <thead>
-          <tr class="table-dark">
-            <th></th>
-            <th v-for="column in columns" :key="column.key">{{ column.column }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in paginatedData" :key="item.id">
-            <td>
-              <input type="radio" v-model="selectedItemId" :value="item.questionnaireId" @click="handleRadioClick(item)">
-            </td>
-            <td v-for="column in columns" :key="column.key">{{ item[column.key] }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <!-- 分頁按鈕等... -->
-    </div>
-  </template>
-  
 
 <style lang="scss" scoped>
 .table-fixed {
-    table-layout: fixed;
-    width: 100%;
+  table-layout: fixed;
+  width: 100%;
 }
 
 .pagination .page-link:hover {
-    cursor: pointer;
+  cursor: pointer;
+}
+
+.modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.modal h2 {
+  margin-top: 0;
+}
+
+.modal form {
+  display: flex;
+  gap: 10px;
 }
 </style>

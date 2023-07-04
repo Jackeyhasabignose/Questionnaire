@@ -24,6 +24,10 @@ export default {
     },
     computed: {
         formattedData() {
+            if (!this.filteredData) {
+                return [];
+            }
+
             return this.filteredData.map(item => {
                 const formattedStartTime = new Date(item.startTime).toISOString().split('T')[0];
                 return {
@@ -111,32 +115,38 @@ export default {
             this.fetchQuestionnairesWithinDateRange(startTime, endTime);
         },
         deleteSelectedItems() {
-  const selectedItemId = this.selectedItemId;
-  if (!selectedItemId) {
-    console.error('No questionnaire ID selected for deletion.');
-    return;
-  }
+            const selectedItemId = this.selectedItemId;
+            if (!selectedItemId) {
+                console.error('No questionnaire ID selected for deletion.');
+                return;
+            }
 
-  fetch('http://localhost:8080/Delete_questionnaire', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ questionnaireId: selectedItemId })
-  })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then(data => {
-      console.log(data);
-    })
-    .catch(error => {
-      console.error(error);
-    });
-}
+            fetch('http://localhost:8080/Delete_questionnaire', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ questionnaireId: selectedItemId })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(data);
+                    // 在成功刪除後，重新獲取問卷數據並更新畫面
+                    this.fetchAllQuestionnaireData();
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        },
+        updateSelectedItemId(value) {
+            this.selectedItemId = value;
+            // 在這裡可以執行其他相關操作
+        }
 
 
 
@@ -159,11 +169,14 @@ export default {
             <SearchView @search="handleSearch" @dateRangeSearch="handleDateRangeSearch" />
         </div>
         <div class="ooo icon-container">
-            <i class=" fas fa-plus " @click="addNewItem"></i>
+            <router-link to="/addquestionnaire">
+                <i class="fas fa-plus"></i>
+            </router-link>
             <i class=" fas fa-trash" @click="deleteSelectedItems"></i>
         </div>
         <div class="mt-2">
-            <TableView :columns="tableColumns" :data="formattedData" :selectedItemId="selectedItemId" />
+            <TableView :columns="tableColumns" :data="formattedData" :selected-item-id.sync="selectedItemId"
+                @update:selectedItemId="updateSelectedItemId" />
         </div>
     </div>
 </template>
